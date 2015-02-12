@@ -7,10 +7,8 @@ import net.minecraft.world.biome.WorldChunkManager;
 import net.minecraft.world.gen.layer.*;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Trevor on 2/8/2015.
@@ -19,7 +17,16 @@ public class BiosphereChunkManager extends WorldChunkManager {
 
 	private List<BiomeGenBase> mSpawnBiomes;
 
-	private Map<Point, Integer> mBiomeMap;
+	private Map<Point, BiosphereInfo> mBiomeMap;
+
+	private static BiosphereChunkManager sInstance;
+
+	public static BiosphereChunkManager get(World world) {
+		if (sInstance == null) {
+			sInstance = new BiosphereChunkManager(world);
+		}
+		return sInstance;
+	}
 
 	public BiosphereChunkManager() {
 		super();
@@ -33,6 +40,39 @@ public class BiosphereChunkManager extends WorldChunkManager {
 		super(worldIn);
 	}
 
+	public Map<Point, BiosphereInfo> getBiomeMap() {
+		return mBiomeMap;
+	}
+
+	public BiosphereInfo getBiosphereAt(int areaX, int areaY, int scale, Random random) {
+		// create biosphere if it doesn't already exist
+		Point chunkSection = getChunkSection(areaX, areaY, scale);
+		BiosphereInfo biosphere = mBiomeMap.get(chunkSection);
+		if (biosphere == null) {
+			biosphere = new BiosphereInfo(chunkSection);
+
+			biosphere.biome = mSpawnBiomes.get(random.nextInt(mSpawnBiomes.size()));
+
+			mBiomeMap.put(chunkSection, biosphere);
+		}
+
+		return biosphere;
+	}
+
+	public static Point getChunkSection(int x, int y, int scale) {
+		int sectionX = x / scale;
+		int sectionY = y / scale;
+
+		if (x < 0 && x % scale != 0) sectionX--;
+		if (y < 0 && y % scale != 0) sectionY--;
+
+		return new Point(sectionX, sectionY);
+	}
+
+	public List<BiomeGenBase> getSpawnBiomes() {
+		return mSpawnBiomes;
+	}
+
 	@Override
 	public boolean areBiomesViable(int p_76940_1_, int p_76940_2_, int p_76940_3_, List p_76940_4_) {
 		// allow all biomes
@@ -41,41 +81,17 @@ public class BiosphereChunkManager extends WorldChunkManager {
 
 	@Override
 	public GenLayer[] getModdedBiomeGenerators(WorldType worldType, long seed, GenLayer[] original) {
-		GenLayer[] genLayers = super.getModdedBiomeGenerators(worldType, seed, original);
+		EmptyBiomeGenBase.get();
 
-		// ensure empty biome is registered
-//		EmptyBiomeGenBase.get();
-
-		mBiomeMap = new HashMap<Point, Integer>();
+		mBiomeMap = new HashMap<Point, BiosphereInfo>();
 
 		return getBiosphereGenLayers(seed, worldType);
 	}
 
 	public GenLayer[] getBiosphereGenLayers(long seed, WorldType worldType) {
-//		mBaseGenLayer = new BaseGenLayer(1L);
-//		GenLayerFuzzyZoom genlayerfuzzyzoom = new GenLayerFuzzyZoom(2000L, mBaseGenLayer);
-//		GenLayerAddIsland genlayeraddisland = new GenLayerAddIsland(1L, genlayerfuzzyzoom);
-//		GenLayerZoom genlayerzoom = new GenLayerZoom(2001L, genlayeraddisland);
-//		genlayeraddisland = new GenLayerAddIsland(2L, genlayerzoom);
-//		genlayeraddisland = new GenLayerAddIsland(50L, genlayeraddisland);
-//		genlayeraddisland = new GenLayerAddIsland(70L, genlayeraddisland);
-//		GenLayerRemoveTooMuchOcean genlayerremovetoomuchocean = new GenLayerRemoveTooMuchOcean(2L, genlayeraddisland);
-//		GenLayerAddSnow genlayeraddsnow = new GenLayerAddSnow(2L, genlayerremovetoomuchocean);
-//		genlayeraddisland = new GenLayerAddIsland(3L, genlayeraddsnow);
-//		GenLayerEdge genlayeredge = new GenLayerEdge(2L, genlayeraddisland, GenLayerEdge.Mode.COOL_WARM);
-//		genlayeredge = new GenLayerEdge(2L, genlayeredge, GenLayerEdge.Mode.HEAT_ICE);
-//		genlayeredge = new GenLayerEdge(3L, genlayeredge, GenLayerEdge.Mode.SPECIAL);
-//		genlayerzoom = new GenLayerZoom(2002L, genlayeredge);
-//		genlayerzoom = new GenLayerZoom(2003L, genlayerzoom);
-//		genlayeraddisland = new GenLayerAddIsland(4L, genlayerzoom);
-//		GenLayerAddMushroomIsland genlayeraddmushroomisland = new GenLayerAddMushroomIsland(5L, genlayeraddisland);
-//		GenLayerDeepOcean genlayerdeepocean = new GenLayerDeepOcean(4L, genlayeraddmushroomisland);
-//		GenLayer genlayer2 = GenLayerZoom.magnify(1000L, genlayerdeepocean, 0);
-//
 		BaseGenLayer baseLayer = new BaseGenLayer(seed);
 		GenLayer genlayer = GenLayerZoom.magnify(1000L, baseLayer, 0);
 		GenLayerRiverInit genlayerriverinit = new GenLayerRiverInit(100L, genlayer);
-//		GenLayer genlayerbiomeedge = p_180781_2_.getBiomeLayer(p_180781_0_, genlayer2, p_180781_3_);
 		GenLayer genlayer1 = GenLayerZoom.magnify(1000L, genlayerriverinit, 2);
 		GenLayerHills genlayerhills = new GenLayerHills(1000L, baseLayer, genlayer1);
 		genlayer = GenLayerZoom.magnify(1000L, genlayerriverinit, 2);
@@ -85,12 +101,17 @@ public class BiosphereChunkManager extends WorldChunkManager {
 
 		GenLayerSmooth genlayersmooth1 = new GenLayerSmooth(1000L, genlayerhills);
 		GenLayerRiverMix genlayerrivermix = new GenLayerRiverMix(100L, genlayersmooth1, genlayersmooth);
-		TrackPositionGenLayer trackGenLayer = new TrackPositionGenLayer(genlayerrivermix, baseLayer);
-		GenLayerVoronoiZoom genlayervoronoizoom = new GenLayerVoronoiZoom(10L, trackGenLayer);
+		GenLayerVoronoiZoom genlayervoronoizoom = new GenLayerVoronoiZoom(10L, genlayerrivermix);
 		genlayerrivermix.initWorldGenSeed(seed);
 		genlayervoronoizoom.initWorldGenSeed(seed);
 
-		return new GenLayer[] {trackGenLayer, genlayervoronoizoom, trackGenLayer};
+		TrackPositionGenLayer trackPositionRiverLayer = new TrackPositionGenLayer(1, genlayerrivermix, baseLayer);
+
+		return new GenLayer[]{
+			trackPositionRiverLayer,
+			new TrackPositionGenLayer(4, genlayervoronoizoom, baseLayer),
+			trackPositionRiverLayer
+		};
 	}
 
 	private class BaseGenLayer extends GenLayer {
@@ -115,29 +136,14 @@ public class BiosphereChunkManager extends WorldChunkManager {
 				}
 			}
 
-//			int ax = areaX / 16;
-//			int ay = areaY / 16;
-//
-//			if (areaX < 0) ax--;
-//			if (areaY < 0) ay--;
-
-//			StringBuilder sb = new StringBuilder()
-//                    .append("Area is (").append(areaX).append(',').append(areaY).append(')')
-//					.append("-> maps to (").append(ax).append(',').append(ay).append(')');
-//
-//			FMLLog.info(sb.toString());
-
 			Point cachePoint = mCurrentArea != null ? mCurrentArea : new Point(areaX, areaY);
-			Integer biome = mBiomeMap.get(cachePoint);
-			if (biome == null) {
-				biome = mSpawnBiomes.get(nextInt(mSpawnBiomes.size())).biomeID;
-				mBiomeMap.put(cachePoint, biome);
-			}
+			BiosphereInfo biosphere = mBiomeMap.get(cachePoint);
+			int biomeId = biosphere == null ? BiomeGenBase.birchForest.biomeID : biosphere.biome.biomeID;
 
 			int[] ints = IntCache.getIntCache(areaWidth * areaHeight);
 			for (int x = 0;x < areaWidth;x++) {
 				for (int y = 0;y < areaHeight;y++) {
-					ints[y*areaWidth + x] = biome;
+					ints[y*areaWidth + x] = biomeId;
 				}
 			}
 			return ints;
@@ -147,22 +153,20 @@ public class BiosphereChunkManager extends WorldChunkManager {
 	private class TrackPositionGenLayer extends GenLayer {
 
 		private BaseGenLayer mBaseLayer;
+		private int mScale;
 
-		public TrackPositionGenLayer(GenLayer parent, BaseGenLayer baseLayer) {
+		public TrackPositionGenLayer(int scale, GenLayer parent, BaseGenLayer baseLayer) {
 			// seed doesn't matter, we aren't using it
 			super(0);
+			mScale = scale;
 			mBaseLayer = baseLayer;
 			this.parent = parent;
 		}
 
 		@Override
 		public int[] getInts(int areaX, int areaY, int areaWidth, int areaHeight) {
-			int x = areaX / 16;
-			int y = areaY / 16;
-			if (areaX < 0) x--;
-			if (areaY < 0) y--;
-
-			mBaseLayer.setNextArea(new Point(x, y));
+			// area should not account for individual blocks, and the base zoom is 4
+			mBaseLayer.setNextArea(getChunkSection(areaX, areaY, mScale * 16 * (BiosphereInfo.BIOSPHERE_CHUNK_SIZE / 4)));
 			return parent.getInts(areaX, areaY, areaWidth, areaHeight);
 		}
 	}

@@ -4,6 +4,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldSettings;
 import net.minecraft.world.WorldType;
 import net.minecraft.world.biome.WorldChunkManager;
+import net.minecraft.world.chunk.IChunkProvider;
 
 /**
  * Created by Trevor on 2/8/2015.
@@ -29,9 +30,14 @@ public class BiosphereWorldType extends WorldType {
 	}
 
 	@Override
+	public IChunkProvider getChunkGenerator(World world, String generatorOptions) {
+		return new BiosphereChunkGenerator(world, world.getSeed(), world.getWorldInfo().isMapFeaturesEnabled(), generatorOptions);
+	}
+
+	@Override
 	public WorldChunkManager getChunkManager(World world) {
 		world.getWorldInfo().setGameType(WorldSettings.GameType.CREATIVE);
-		return new BiosphereChunkManager(world);
+		return BiosphereChunkManager.get(world);
 	}
 
 	@Override
