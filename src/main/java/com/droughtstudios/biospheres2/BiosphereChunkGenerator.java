@@ -1,5 +1,7 @@
 package com.droughtstudios.biospheres2;
 
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.init.Blocks;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.chunk.Chunk;
@@ -47,6 +49,7 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 		                                                                           areaY,
 		                                                                           BiosphereInfo.BIOSPHERE_CHUNK_SIZE,
 		                                                                           mRandom);
+		double biomeRadiusSq = biosphere.radius * biosphere.radius;
 
 		// load default blocks
 		this.func_180518_a(areaX, areaY, chunkPrimer);
@@ -54,29 +57,74 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 		// load biome data for generating
 		mBiomeGens = mWorld.getWorldChunkManager().loadBlockGeneratorData(mBiomeGens, areaX * 16, areaY * 16, 16, 16);
 
-		// cut out the circles for the biomes
-		boolean inRootRadius = false;
-		for (int x = 0;x < 16;x++) {
-			for (int y = 0;y < 16;y++) {
+		// get average terrain height for this chunk in case the biosphere is new and does not yet have a height
 
-				// equation of a circle
-				float a = (x + areaX * 16) - biosphere.worldCenter.x;
-				float b = (y + areaY * 16) - biosphere.worldCenter.y;
-				float distanceSq = (a * a) + (b * b);
+		if (biosphere.height == 0) {
+			int heightSum = 0;
+			int numHeights = 0;
+			for (int x = 0;x < 16;x++) {
+				for (int z = 0;z < 16;z++) {
 
-				// point is outside the circle
-				int index = y * 16 + x;
-				if (distanceSq > biosphere.radius * biosphere.radius) {
-					mBiomeGens[index] = EmptyBiomeGenBase.get();
+					int primerX = (areaX * 16 + x) & 15;
+					int primerZ = (areaY * 16 + z) & 15;
+
+					for (int y = 255; y >= 0; y--) {
+						IBlockState blockState = chunkPrimer.getBlockState(primerX, y, primerZ);
+						if (blockState != Blocks.air.getDefaultState()) {
+							heightSum += y;
+							numHeights++;
+							break;
+						}
+					}
 				}
-				else if (distanceSq <= biosphere.radius) {
-					inRootRadius = true;
-				}
+			}
+
+			if (numHeights > 0) {
+				biosphere.height = Math.max(BiosphereInfo.BIOSPHERE_MIN_HEIGHT,
+				                            Math.min(BiosphereInfo.BIOSPHERE_MAX_HEIGHT,
+				                                     heightSum / numHeights));
 			}
 		}
 
 		// generate terrain
 		this.func_180517_a(areaX, areaY, chunkPrimer, mBiomeGens);
+
+		// cut out sphere
+		boolean inRootRadius = false;
+		for (int x = 0;x < 16;x++) {
+			for (int z = 0;z < 16;z++) {
+
+				double dx = (areaX * 16 + x) - biosphere.worldCenter.getX();
+				double dz = (areaY * 16 + z) - biosphere.worldCenter.getY();
+				double distance2dSq = (dx * dx) + (dz * dz);
+
+				int primerX = (areaX * 16 + x) & 15;
+				int primerZ = (areaY * 16 + z) & 15;
+
+				// point not in biosphere, ensure all is air
+				// terrain generation above may have added additional terrain outside of circle
+				if (distance2dSq > biomeRadiusSq) {
+					for (int y = 0;y < 256;y++) {
+						chunkPrimer.setBlockState(primerX, y, primerZ, Blocks.air.getDefaultState());
+					}
+					continue;
+				}
+				else {
+					inRootRadius = true;
+				}
+
+				// cut out sphere itself when within biome's circle radius
+				for (int y = 255; y >= 0; y--) {
+					double dy = y - biosphere.height;
+
+					double distance3dSq = distance2dSq + (dy * dy);
+
+					if (distance3dSq > biomeRadiusSq) {
+						chunkPrimer.setBlockState(primerX, y, primerZ, Blocks.air.getDefaultState());
+					}
+				}
+			}
+		}
 
 		// generate caves
 		mCaveGen.func_175792_a(this, mWorld, areaX, areaY, chunkPrimer);
@@ -115,10 +163,7 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 			for (int x = 0; x < 16; x++) {
 				for (int y = 0; y < 16; y++) {
 
-					// equation of a circle
-					float a = (x + areaX * 16) - biosphere.worldCenter.x;
-					float b = (y + areaY * 16) - biosphere.worldCenter.y;
-					float distanceSq = (a * a) + (b * b);
+					double distanceSq = biosphere.worldCenter.distanceSq(areaX * 16 + x, areaY * 16 + y);
 
 					// inside inner radius
 					if (distanceSq <= biosphere.radius) {
