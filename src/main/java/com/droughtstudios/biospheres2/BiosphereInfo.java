@@ -30,9 +30,15 @@ public class BiosphereInfo {
 	public static List<BiomeGenBase> validBiomes;
 
 	public BiosphereInfo(Point biosphereLocation, Random random) {
-		worldCenter = new Point.Float(((float)biosphereLocation.x + 0.5f) * BIOSPHERE_CHUNK_SIZE * 16f,
-		                              ((float)biosphereLocation.y + 0.5f) * BIOSPHERE_CHUNK_SIZE * 16f);
 		radius = BIOSPHERE_RADIUS_CHUNKS * 16;
+
+		// spawn area is subsquare of total area; subsquare is -radius on each side
+		int spawnAreaSize = (BIOSPHERE_CHUNK_SIZE * 16) - 2 * (int)radius;
+		float spawnX = radius + random.nextInt(spawnAreaSize);
+		float spawnY = radius + random.nextInt(spawnAreaSize);
+
+		worldCenter = new Point.Float((float)biosphereLocation.x * BIOSPHERE_CHUNK_SIZE * 16f + spawnX,
+		                              (float)biosphereLocation.y * BIOSPHERE_CHUNK_SIZE * 16f + spawnY);
 
 		if (validBiomes == null) initValidBiomes();
 
