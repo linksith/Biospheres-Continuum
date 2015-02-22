@@ -1,8 +1,13 @@
 package com.droughtstudios.biospheres2;
 
+import java.awt.Point;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import net.minecraft.world.biome.BiomeGenBase;
-
-import java.awt.*;
+import net.minecraftforge.common.BiomeDictionary;
 
 /**
  * Created by Trevor on 2/11/2015.
@@ -20,9 +25,30 @@ public class BiosphereInfo {
 	public BiomeGenBase biome;
 	public int height = 0;
 
-	public BiosphereInfo(Point biosphereLocation) {
+	public static List<BiomeGenBase> validBiomes;
+
+	public BiosphereInfo(Point biosphereLocation, Random random) {
 		worldCenter = new Point.Float(((float)biosphereLocation.x + 0.5f) * BIOSPHERE_CHUNK_SIZE * 16f,
 		                              ((float)biosphereLocation.y + 0.5f) * BIOSPHERE_CHUNK_SIZE * 16f);
-		radius = BIOSPHERE_RADIUS_CHUNKS * BIOSPHERE_CHUNK_SIZE;
+		radius = BIOSPHERE_RADIUS_CHUNKS * 16;
+
+		if (validBiomes == null) initValidBiomes();
+
+		biome = validBiomes.get(random.nextInt(validBiomes.size()));
+	}
+
+	private void initValidBiomes() {
+		Set<BiomeGenBase> biomes = new HashSet<>();
+
+		BiomeDictionary.Type[] types = BiomeDictionary.Type.values();
+		for (BiomeDictionary.Type type : types) {
+			if (type != BiomeDictionary.Type.RIVER) {
+				for (BiomeGenBase biomeGenBase : BiomeDictionary.getBiomesForType(type)) {
+					biomes.add(biomeGenBase);
+				}
+			}
+		}
+
+		validBiomes = new ArrayList<>(biomes);
 	}
 }

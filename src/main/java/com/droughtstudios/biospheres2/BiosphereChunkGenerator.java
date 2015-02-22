@@ -1,5 +1,6 @@
 package com.droughtstudios.biospheres2;
 
+import java.util.Random;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.world.World;
@@ -11,8 +12,6 @@ import net.minecraft.world.gen.MapGenCaves;
 import net.minecraft.world.gen.structure.MapGenScatteredFeature;
 import net.minecraft.world.gen.structure.MapGenStronghold;
 import net.minecraft.world.gen.structure.StructureOceanMonument;
-
-import java.util.Random;
 
 /**
  * Created by Trevor on 2/8/2015.
@@ -45,10 +44,9 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 		mRandom.setSeed((long)areaX * 341873128712L + (long)areaY * 132897987541L);
 		ChunkPrimer chunkPrimer = new ChunkPrimer();
 
-		BiosphereInfo biosphere = BiosphereChunkManager.get(mWorld).getBiosphereAt(areaX,
-		                                                                           areaY,
-		                                                                           BiosphereInfo.BIOSPHERE_CHUNK_SIZE,
-		                                                                           mRandom);
+		BiosphereInfo biosphere = BiosphereChunkManager.get(mWorld).getBiosphereAtArea(areaX,
+		                                                                               areaY,
+		                                                                               mRandom);
 		double biomeRadiusSq = biosphere.radius * biosphere.radius;
 
 		// load default blocks
@@ -58,7 +56,6 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 		mBiomeGens = mWorld.getWorldChunkManager().loadBlockGeneratorData(mBiomeGens, areaX * 16, areaY * 16, 16, 16);
 
 		// get average terrain height for this chunk in case the biosphere is new and does not yet have a height
-
 		if (biosphere.height == 0) {
 			int heightSum = 0;
 			int numHeights = 0;
@@ -151,10 +148,9 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 	}
 
 	private void generateFeatures(int areaX, int areaY, ChunkPrimer chunkPrimer, Boolean overrideInRadius) {
-		BiosphereInfo biosphere = BiosphereChunkManager.get(mWorld).getBiosphereAt(areaX,
-		                                                                           areaY,
-		                                                                           BiosphereInfo.BIOSPHERE_CHUNK_SIZE,
-		                                                                           mRandom);
+		BiosphereInfo biosphere = BiosphereChunkManager.get(mWorld).getBiosphereAtArea(areaX,
+		                                                                               areaY,
+		                                                                               mRandom);
 
 		boolean inRootRadius = false;
 
