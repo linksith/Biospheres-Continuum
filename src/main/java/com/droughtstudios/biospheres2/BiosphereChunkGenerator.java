@@ -1,6 +1,8 @@
 package com.droughtstudios.biospheres2;
 
 import java.util.Random;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockFalling;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.world.World;
@@ -86,6 +88,9 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 		// generate terrain
 		this.func_180517_a(areaX, areaY, chunkPrimer, mBiomeGens);
 
+		// generate caves
+		mCaveGen.func_175792_a(this, mWorld, areaX, areaY, chunkPrimer);
+
 		// cut out sphere
 		boolean inRootRadius = false;
 		for (int x = 0;x < 16;x++) {
@@ -95,14 +100,11 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 				double dz = (areaY * 16 + z) - biosphere.worldCenter.getY();
 				double distance2dSq = (dx * dx) + (dz * dz);
 
-				int primerX = (areaX * 16 + x) & 15;
-				int primerZ = (areaY * 16 + z) & 15;
-
 				// point not in biosphere, ensure all is air
 				// terrain generation above may have added additional terrain outside of circle
 				if (distance2dSq > biomeRadiusSq) {
 					for (int y = 0;y < 256;y++) {
-						chunkPrimer.setBlockState(primerX, y, primerZ, Blocks.air.getDefaultState());
+						chunkPrimer.setBlockState(x, y, z, Blocks.air.getDefaultState());
 					}
 					continue;
 				}
@@ -111,20 +113,42 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 				}
 
 				// cut out sphere itself when within biome's circle radius
+				boolean underGround = false;
 				for (int y = 255; y >= 0; y--) {
 					double dy = y - biosphere.height;
 
 					double distance3dSq = distance2dSq + (dy * dy);
 
+					// get current block state
+					Block block = chunkPrimer.getBlockState(x, y, z).getBlock();
+					boolean isBlockSolid = block.getMaterial().blocksMovement() || block instanceof BlockFalling;
+
+					// solid blocks found in this column, so we are now 'underground'
+					underGround |= isBlockSolid;
+
+					// cut sphere
 					if (distance3dSq > biomeRadiusSq) {
-						chunkPrimer.setBlockState(primerX, y, primerZ, Blocks.air.getDefaultState());
+						chunkPrimer.setBlockState(x, y, z, Blocks.air.getDefaultState());
+					}
+
+					// ensure sphere is closed - biosphere.radius equates to a difference of 1 in the squared distances
+					else if (BiosphereInfo.DOME_ENABLED && !isBlockSolid &&
+					         biomeRadiusSq - distance3dSq <= biosphere.radius * 2) {
+
+						// close sphere below ground with stone
+						// todo consider the end and the nether
+						if (underGround) {
+							chunkPrimer.setBlockState(x, y, z, Blocks.stone.getDefaultState());
+						}
+
+						// close sphere above ground with glass
+						else {
+							chunkPrimer.setBlockState(x, y, z, Blocks.glass.getDefaultState());
+						}
 					}
 				}
 			}
 		}
-
-		// generate caves
-		mCaveGen.func_175792_a(this, mWorld, areaX, areaY, chunkPrimer);
 
 		generateFeatures(areaX, areaY, chunkPrimer, inRootRadius);
 

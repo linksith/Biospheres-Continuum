@@ -20,6 +20,8 @@ public class BiosphereInfo {
 	public static final int BIOSPHERE_MAX_HEIGHT = 128;
 	public static final int BIOSPHERE_MIN_HEIGHT = BIOSPHERE_RADIUS_CHUNKS * BIOSPHERE_CHUNK_SIZE;
 
+	public static boolean DOME_ENABLED = true;
+
 	public Point.Float worldCenter;
 	public float radius;
 	public BiomeGenBase biome;

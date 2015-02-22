@@ -34,10 +34,12 @@ public class EmptyBiomeGenBase
 
 	public EmptyBiomeGenBase(int p_i1971_1_) {
 		super(p_i1971_1_);
+		fillerBlock = Blocks.air.getDefaultState();
 	}
 
 	public EmptyBiomeGenBase(int p_i1971_1_, boolean register) {
 		super(p_i1971_1_, register);
+		fillerBlock = Blocks.air.getDefaultState();
 	}
 
 	@Override
