@@ -143,7 +143,7 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 
 						// close sphere above ground with glass
 						else {
-							chunkPrimer.setBlockState(x, y, z, Blocks.glass.getDefaultState());
+							chunkPrimer.setBlockState(x, y, z, BlockDome.blockDome.getDefaultState());
 						}
 					}
 				}

@@ -17,13 +17,13 @@ buildscript {
 
 apply plugin: 'forge'
 
-version = "0.8"
-group= "com.brainslugs83.newBiospheresMod" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "NewBiospheresMod"
+version = "0.1"
+group= "com.droughtstudios.Biospheres2" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = "Biospheres2"
 
 minecraft {
-    version = "1.7.10-10.13.1.1217"
-    runDir = "eclipse"
+    version = "1.8-11.14.0.1299"
+    runDir = "build"
 }
 
 dependencies {
@@ -39,11 +39,7 @@ dependencies {
     // for more info...
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
-    
-    compile files {
-        "lib/concurrentlinkedhashmap-lru-1.4.jar"
-    }
-    
+
 }
 
 processResources
@@ -63,5 +59,10 @@ processResources
     // copy everything else, thats not the mcmod.info
     from(sourceSets.main.resources.srcDirs) {
         exclude 'mcmod.info'
+    }
+}
+sourceSets {
+    main {
+        output.resourcesDir = output.classesDir
     }
 }

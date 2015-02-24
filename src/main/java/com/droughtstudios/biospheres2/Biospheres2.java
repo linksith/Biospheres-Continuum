@@ -1,5 +1,8 @@
 package com.droughtstudios.biospheres2;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.item.Item;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
@@ -22,10 +25,10 @@ public class Biospheres2 {
 	@Mod.EventHandler
 	public void init(FMLInitializationEvent event) {
 		BiosphereWorldType.biosphereWorldType = new BiosphereWorldType();
+		BlockDome.register();
 
-		// unregister old overworld provider and register our own
-//		DimensionManager.unregisterProviderType(0);
-//		DimensionManager.registerProviderType(0, BiosphereWorldProvider.class, true);
+		Item item = Item.getItemFromBlock(BlockDome.blockDome);
+		Minecraft.getMinecraft().getRenderItem().getItemModelMesher().register(item, 0, new ModelResourceLocation("biospheres2:glass_dome", "inventory"));
 	}
 
 	@Mod.EventHandler

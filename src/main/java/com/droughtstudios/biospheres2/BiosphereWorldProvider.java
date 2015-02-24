@@ -22,17 +22,6 @@ public class BiosphereWorldProvider extends WorldProviderSurface {
 		dimensionId = 0;
 	}
 
-//	@Override
-//	public BlockPos getRandomizedSpawnPoint() {
-//		// todo
-//		return super.getRandomizedSpawnPoint();
-//	}
-//
-//	@Override
-//	public BlockPos getSpawnPoint() {
-//		// todo
-//		return super.getSpawnPoint();
-//	}
 
 
 }
