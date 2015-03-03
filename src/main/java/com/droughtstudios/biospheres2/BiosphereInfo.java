@@ -2,6 +2,7 @@ package com.droughtstudios.biospheres2;
 
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -22,12 +23,27 @@ public class BiosphereInfo {
 
 	public static boolean DOME_ENABLED = true;
 
+	private static BiomeDictionary.Type[] biomeSubsets = new BiomeDictionary.Type[] {
+			BiomeDictionary.Type.OCEAN,
+			BiomeDictionary.Type.PLAINS,
+			BiomeDictionary.Type.SANDY,
+			BiomeDictionary.Type.MOUNTAIN,
+			BiomeDictionary.Type.FOREST,
+			BiomeDictionary.Type.CONIFEROUS,
+			BiomeDictionary.Type.WASTELAND,
+			BiomeDictionary.Type.BEACH,
+			BiomeDictionary.Type.WET,
+			BiomeDictionary.Type.END,
+			BiomeDictionary.Type.NETHER,
+			BiomeDictionary.Type.MUSHROOM
+	};
+
 	public Point.Float worldCenter;
 	public float radius;
 	public BiomeGenBase biome;
 	public int height = 0;
 
-	public static List<BiomeGenBase> validBiomes;
+	public Point featurePosition = null;
 
 	public BiosphereInfo(Point biosphereLocation, Random random) {
 		radius = BIOSPHERE_RADIUS_CHUNKS * 16;
@@ -40,23 +56,39 @@ public class BiosphereInfo {
 		worldCenter = new Point.Float((float)biosphereLocation.x * BIOSPHERE_CHUNK_SIZE * 16f + spawnX,
 		                              (float)biosphereLocation.y * BIOSPHERE_CHUNK_SIZE * 16f + spawnY);
 
-		if (validBiomes == null) initValidBiomes();
+		// get biome ===================================================================================================
 
-		biome = validBiomes.get(random.nextInt(validBiomes.size()));
-	}
+		BiomeDictionary.Type subType = biomeSubsets[random.nextInt(biomeSubsets.length)];
 
-	private void initValidBiomes() {
-		Set<BiomeGenBase> biomes = new HashSet<>();
+		Set<BiomeGenBase> biomes = new HashSet<>(Arrays.asList(BiomeDictionary.getBiomesForType(subType)));
 
-		BiomeDictionary.Type[] types = BiomeDictionary.Type.values();
-		for (BiomeDictionary.Type type : types) {
-			if (type != BiomeDictionary.Type.RIVER) {
-				for (BiomeGenBase biomeGenBase : BiomeDictionary.getBiomesForType(type)) {
-					biomes.add(biomeGenBase);
-				}
+		// if forest, filter out coniferous
+		if (subType == BiomeDictionary.Type.FOREST) {
+			for (BiomeGenBase biomeGenBase : BiomeDictionary.getBiomesForType(BiomeDictionary.Type.CONIFEROUS)) {
+				biomes.remove(biomeGenBase);
 			}
 		}
 
-		validBiomes = new ArrayList<>(biomes);
+		List<BiomeGenBase> validBiomes = new ArrayList<>(biomes);
+		biome = validBiomes.get(random.nextInt(validBiomes.size()));
+	}
+
+	public boolean inRadius(int worldPosX, int worldPosY, int worldPosZ) {
+		double dx = worldPosX - worldCenter.x;
+		double dy = worldPosY - height;
+		double dz = worldPosZ - worldCenter.y;
+		return ((dx * dx) + (dy * dy) + (dz * dz)) < radius * radius;
+	}
+
+	public boolean inRadius(int worldPosX, int worldPosY) {
+		double dx = worldPosX - worldCenter.x;
+		double dz = worldPosY - worldCenter.y;
+		return ((dx * dx) + (dz * dz)) < radius * radius;
+	}
+
+	public boolean inInnerRadius(int worldPosX, int worldPosY) {
+		double dx = worldPosX - worldCenter.x;
+		double dz = worldPosY - worldCenter.y;
+		return ((dx * dx) + (dz * dz)) < radius;
 	}
 }

@@ -1,19 +1,26 @@
 package com.droughtstudios.biospheres2;
 
+import java.util.List;
 import java.util.Random;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFalling;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.BlockPos;
+import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkPrimer;
+import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.ChunkProviderGenerate;
 import net.minecraft.world.gen.MapGenCaves;
 import net.minecraft.world.gen.structure.MapGenScatteredFeature;
 import net.minecraft.world.gen.structure.MapGenStronghold;
-import net.minecraft.world.gen.structure.StructureOceanMonument;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.terraingen.PopulateChunkEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 /**
  * Created by Trevor on 2/8/2015.
@@ -23,7 +30,7 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 	private final MapGenCaves mCaveGen;
 	private final MapGenStronghold mStrongholdGen;
 	private final MapGenScatteredFeature mScatteredFeatureGen;
-	private final StructureOceanMonument mOceanMonumentGen;
+	private final BiosphereOceanMonument mOceanMonumentGen;
 
 	private BiomeGenBase[] mBiomeGens;
 
@@ -37,8 +44,10 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 		mCaveGen = new MapGenCaves();
 		mStrongholdGen = new MapGenStronghold();
 		mScatteredFeatureGen = new MapGenScatteredFeature();
-		mOceanMonumentGen = new StructureOceanMonument();
+		mOceanMonumentGen = new BiosphereOceanMonument();
 		mRandom = new Random(seed);
+
+		MinecraftForge.EVENT_BUS.register(this);
 	}
 
 	@Override
@@ -46,9 +55,7 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 		mRandom.setSeed((long)areaX * 341873128712L + (long)areaY * 132897987541L);
 		ChunkPrimer chunkPrimer = new ChunkPrimer();
 
-		BiosphereInfo biosphere = BiosphereChunkManager.get(mWorld).getBiosphereAtArea(areaX,
-		                                                                               areaY,
-		                                                                               mRandom);
+		BiosphereInfo biosphere = BiosphereChunkManager.get(mWorld).getBiosphereAtArea(areaX, areaY);
 		double biomeRadiusSq = biosphere.radius * biosphere.radius;
 
 		// load default blocks
@@ -57,18 +64,23 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 		// load biome data for generating
 		mBiomeGens = mWorld.getWorldChunkManager().loadBlockGeneratorData(mBiomeGens, areaX * 16, areaY * 16, 16, 16);
 
+		// area start position in world coordinates
+		int areaWorldX = areaX * 16;
+		int areaWorldZ = areaY * 16;
+
 		// get average terrain height for this chunk in case the biosphere is new and does not yet have a height
+		boolean inRootRadius = false;
 		if (biosphere.height == 0) {
 			int heightSum = 0;
 			int numHeights = 0;
 			for (int x = 0;x < 16;x++) {
 				for (int z = 0;z < 16;z++) {
-
-					int primerX = (areaX * 16 + x) & 15;
-					int primerZ = (areaY * 16 + z) & 15;
+					if (biosphere.inRadius(areaWorldX + x, areaWorldZ + z)) {
+						inRootRadius = true;
+					}
 
 					for (int y = 255; y >= 0; y--) {
-						IBlockState blockState = chunkPrimer.getBlockState(primerX, y, primerZ);
+						IBlockState blockState = chunkPrimer.getBlockState(x, y, z);
 						if (blockState != Blocks.air.getDefaultState()) {
 							heightSum += y;
 							numHeights++;
@@ -91,8 +103,11 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 		// generate caves
 		mCaveGen.func_175792_a(this, mWorld, areaX, areaY, chunkPrimer);
 
+		// todo ravines?
+
+		generateFeatures(areaX, areaY, chunkPrimer, inRootRadius);
+
 		// cut out sphere
-		boolean inRootRadius = false;
 		for (int x = 0;x < 16;x++) {
 			for (int z = 0;z < 16;z++) {
 
@@ -107,9 +122,6 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 						chunkPrimer.setBlockState(x, y, z, Blocks.air.getDefaultState());
 					}
 					continue;
-				}
-				else {
-					inRootRadius = true;
 				}
 
 				// cut out sphere itself when within biome's circle radius
@@ -150,8 +162,6 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 			}
 		}
 
-		generateFeatures(areaX, areaY, chunkPrimer, inRootRadius);
-
 		Chunk chunk = new Chunk(mWorld, chunkPrimer, areaX, areaY);
 
 		// todo wtf is with this byte array?
@@ -173,8 +183,7 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 
 	private void generateFeatures(int areaX, int areaY, ChunkPrimer chunkPrimer, Boolean overrideInRadius) {
 		BiosphereInfo biosphere = BiosphereChunkManager.get(mWorld).getBiosphereAtArea(areaX,
-		                                                                               areaY,
-		                                                                               mRandom);
+		                                                                               areaY);
 
 		boolean inRootRadius = false;
 
@@ -196,11 +205,38 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 			inRootRadius = overrideInRadius;
 		}
 
+		// todo mineshafts?
+
+		// todo village
+
+		// todo stronghold
+
+		// todo scattered features
+
 		if (inRootRadius) {
-			// todo add village support (including mineshaft); currently villages are too large
-			mStrongholdGen.func_175792_a(this, mWorld, areaX, areaY, chunkPrimer);
-			mScatteredFeatureGen.func_175792_a(this, mWorld, areaX, areaY, chunkPrimer);
 			mOceanMonumentGen.func_175792_a(this, mWorld, areaX, areaY, chunkPrimer);
 		}
+	}
+
+	// Ocean monument generation =======================================================================================
+
+	@Override
+	public boolean func_177460_a(IChunkProvider p_177460_1_, Chunk p_177460_2_, int p_177460_3_, int p_177460_4_) {
+		return mOceanMonumentGen.func_175794_a(mWorld, mRandom, new ChunkCoordIntPair(p_177460_3_, p_177460_4_));
+	}
+
+	@Override
+	public List func_177458_a(EnumCreatureType p_177458_1_, BlockPos p_177458_2_) {
+		if (p_177458_1_ == EnumCreatureType.MONSTER && mOceanMonumentGen.func_175796_a(mWorld, p_177458_2_)) {
+			return mOceanMonumentGen.func_175799_b();
+		}
+		return super.func_177458_a(p_177458_1_, p_177458_2_);
+	}
+
+	// Populate chunk with structure gen ===============================================================================
+
+	@SubscribeEvent
+	public void onPopulateChunk(PopulateChunkEvent.Pre event) {
+		mOceanMonumentGen.func_175794_a(event.world, event.rand, new ChunkCoordIntPair(event.chunkX, event.chunkZ));
 	}
 }

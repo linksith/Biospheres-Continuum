@@ -35,7 +35,7 @@ public class BiosphereGenLayer extends GenLayer {
 
 				// get the biosphere in this area
 				BiosphereInfo biosphereInfo =
-						chunkManager.getBiosphereAtArea(areaX + x, areaY + y, mRandom);
+						chunkManager.getBiosphereAtArea(areaX + x, areaY + y);
 
 				ints[y*areaWidth + x] = biosphereInfo.biome.biomeID;
 			}

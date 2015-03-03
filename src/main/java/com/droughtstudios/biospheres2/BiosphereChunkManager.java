@@ -57,20 +57,20 @@ public class BiosphereChunkManager extends WorldChunkManager {
 		return mBiomeMap;
 	}
 
-	public BiosphereInfo getBiosphereAtWorldPos(int blockPosX, int blockPosY, Random random) {
-		return getBiosphereAtCustomLocation(blockPosX, blockPosY, BiosphereInfo.BIOSPHERE_CHUNK_SIZE * 16, random);
+	public BiosphereInfo getBiosphereAtWorldPos(int blockPosX, int blockPosY) {
+		return getBiosphereAtCustomLocation(blockPosX, blockPosY, BiosphereInfo.BIOSPHERE_CHUNK_SIZE * 16);
 	}
 
-	public BiosphereInfo getBiosphereAtArea(int areaX, int areaY, Random random) {
-		return getBiosphereAtCustomLocation(areaX, areaY, BiosphereInfo.BIOSPHERE_CHUNK_SIZE, random);
+	public BiosphereInfo getBiosphereAtArea(int areaX, int areaY) {
+		return getBiosphereAtCustomLocation(areaX, areaY, BiosphereInfo.BIOSPHERE_CHUNK_SIZE);
 	}
 
-	public BiosphereInfo getBiosphereAtCustomLocation(int x, int y, int scale, Random random) {
+	public BiosphereInfo getBiosphereAtCustomLocation(int x, int y, int scale) {
 		// create biosphere if it doesn't already exist
 		Point chunkSection = getSection(x, y, scale);
 		BiosphereInfo biosphere = mBiomeMap.get(chunkSection);
 		if (biosphere == null) {
-			biosphere = new BiosphereInfo(chunkSection, random);
+			biosphere = new BiosphereInfo(chunkSection, new Random((long)x * 341873128712L + (long)y * 132897987541L));
 			mBiomeMap.put(chunkSection, biosphere);
 		}
 
