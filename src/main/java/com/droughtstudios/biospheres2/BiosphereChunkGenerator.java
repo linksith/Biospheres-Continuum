@@ -29,7 +29,8 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 	private final MapGenCaves mCaveGen;
 	private final MapGenStronghold mStrongholdGen;
 	private final MapGenScatteredFeature mScatteredFeatureGen;
-	private final BiosphereOceanMonument mOceanMonumentGen;
+	private final BiosphereMapGenStructures.BiosphereOceanMonument mOceanMonumentGen;
+	private final BiosphereMapGenStructures.BiosphereVillage mVillageGen;
 
 	private BiomeGenBase[] mBiomeGens;
 
@@ -43,7 +44,8 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 		mCaveGen = new MapGenCaves();
 		mStrongholdGen = new MapGenStronghold();
 		mScatteredFeatureGen = new MapGenScatteredFeature();
-		mOceanMonumentGen = new BiosphereOceanMonument();
+		mOceanMonumentGen = new BiosphereMapGenStructures.BiosphereOceanMonument();
+		mVillageGen = new BiosphereMapGenStructures.BiosphereVillage();
 		mRandom = new Random(seed);
 
 		MinecraftForge.EVENT_BUS.register(this);
@@ -163,15 +165,16 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 			}
 		}
 
-		// todo mineshafts?
-
-		// todo village
-
-		// todo stronghold
-
-		// todo scattered features
-
 		if (inRootRadius) {
+
+			// todo mineshafts?
+
+			mVillageGen.func_175792_a(this, mWorld, areaX, areaY, chunkPrimer);
+
+			// todo stronghold
+
+			// todo scattered features
+
 			mOceanMonumentGen.func_175792_a(this, mWorld, areaX, areaY, chunkPrimer);
 		}
 	}
@@ -196,5 +199,6 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 	@SubscribeEvent
 	public void onPopulateChunk(PopulateChunkEvent.Pre event) {
 		mOceanMonumentGen.func_175794_a(event.world, event.rand, new ChunkCoordIntPair(event.chunkX, event.chunkZ));
+		mVillageGen.func_175794_a(mWorld, mRandom, new ChunkCoordIntPair(event.chunkX, event.chunkZ));
 	}
 }

@@ -1,15 +1,11 @@
 package com.droughtstudios.biospheres2;
 
 import java.awt.Point;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
+import java.util.NavigableMap;
 import java.util.Random;
-import java.util.Set;
+import java.util.TreeMap;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.biome.BiomeGenBase;
-import net.minecraftforge.common.BiomeDictionary;
 
 /**
  * Created by Trevor on 2/11/2015.
@@ -24,20 +20,7 @@ public class BiosphereInfo {
 
 	public static boolean DOME_ENABLED = true;
 
-	private static BiomeDictionary.Type[] biomeSubsets = new BiomeDictionary.Type[] {
-			BiomeDictionary.Type.OCEAN,
-			BiomeDictionary.Type.PLAINS,
-			BiomeDictionary.Type.SANDY,
-			BiomeDictionary.Type.MOUNTAIN,
-			BiomeDictionary.Type.FOREST,
-			BiomeDictionary.Type.CONIFEROUS,
-			BiomeDictionary.Type.WASTELAND,
-			BiomeDictionary.Type.BEACH,
-			BiomeDictionary.Type.WET,
-			BiomeDictionary.Type.END,
-			BiomeDictionary.Type.NETHER,
-			BiomeDictionary.Type.MUSHROOM
-	};
+	private static WeightedMap<WeightedMap<BiomeGenBase>> biomeTypes;
 
 	public Vec3 worldCenter;
 	public float radius;
@@ -46,22 +29,10 @@ public class BiosphereInfo {
 	public Point featurePosition = null;
 
 	public BiosphereInfo(Point biosphereLocation, Random random) {
-
 		// set biome ===================================================================================================
+		genWeightedBiomeList();
 
-		BiomeDictionary.Type subType = biomeSubsets[random.nextInt(biomeSubsets.length)];
-
-		Set<BiomeGenBase> biomes = new HashSet<>(Arrays.asList(BiomeDictionary.getBiomesForType(subType)));
-
-		// if forest, filter out coniferous
-		if (subType == BiomeDictionary.Type.FOREST) {
-			for (BiomeGenBase biomeGenBase : BiomeDictionary.getBiomesForType(BiomeDictionary.Type.CONIFEROUS)) {
-				biomes.remove(biomeGenBase);
-			}
-		}
-
-		List<BiomeGenBase> validBiomes = new ArrayList<>(biomes);
-		biome = validBiomes.get(random.nextInt(validBiomes.size()));
+		biome = biomeTypes.getRandom(random).getRandom(random);
 
 		// set world location ==========================================================================================
 
@@ -100,5 +71,93 @@ public class BiosphereInfo {
 		double dx = worldPosX - worldCenter.xCoord;
 		double dz = worldPosY - worldCenter.zCoord;
 		return ((dx * dx) + (dz * dz)) < radius;
+	}
+
+	private void genWeightedBiomeList() {
+		if (biomeTypes != null) return;
+
+		// todo don't use biomes directly, make more extendable with other mods
+		WeightedMap<BiomeGenBase> ocean = new WeightedMap<BiomeGenBase>()
+				.add(BiomeGenBase.ocean, 0.4)
+				.add(BiomeGenBase.deepOcean, 0.4)
+				.add(BiomeGenBase.frozenOcean, 0.2);
+
+		WeightedMap<BiomeGenBase> plains = new WeightedMap<BiomeGenBase>()
+				.add(BiomeGenBase.plains, 0.5)
+				.add(BiomeGenBase.savanna, 0.3)
+				.add(BiomeGenBase.savannaPlateau, 0.2);
+
+		WeightedMap<BiomeGenBase> sandy = new WeightedMap<BiomeGenBase>()
+				.add(BiomeGenBase.desert, 0.3)
+				.add(BiomeGenBase.desertHills, 0.2)
+				.add(BiomeGenBase.mesa, 0.25)
+				.add(BiomeGenBase.mesaPlateau, 0.15)
+				.add(BiomeGenBase.mesaPlateau_F, 0.1);
+
+		WeightedMap<BiomeGenBase> mountain = new WeightedMap<BiomeGenBase>()
+				.add(BiomeGenBase.extremeHills, 0.4)
+				.add(BiomeGenBase.iceMountains, 0.1)
+				.add(BiomeGenBase.extremeHillsEdge, 0.2)
+				.add(BiomeGenBase.extremeHillsPlus, 0.3);
+
+		WeightedMap<BiomeGenBase> forest = new WeightedMap<BiomeGenBase>()
+				.add(BiomeGenBase.forest, 0.3)
+				.add(BiomeGenBase.forestHills, 0.2)
+				.add(BiomeGenBase.birchForest, 0.2)
+				.add(BiomeGenBase.birchForestHills, 0.1)
+				.add(BiomeGenBase.roofedForest, 0.2);
+
+		WeightedMap<BiomeGenBase> coniferous = new WeightedMap<BiomeGenBase>()
+				.add(BiomeGenBase.taiga, 0.2)
+				.add(BiomeGenBase.taigaHills, 0.2)
+				.add(BiomeGenBase.coldTaiga, 0.2)
+				.add(BiomeGenBase.coldTaigaHills, 0.1)
+				.add(BiomeGenBase.megaTaiga, 0.2)
+				.add(BiomeGenBase.megaTaigaHills, 0.1);
+
+		WeightedMap<BiomeGenBase> wasteland = new WeightedMap<BiomeGenBase>()
+				.add(BiomeGenBase.icePlains, 1);
+
+		WeightedMap<BiomeGenBase> beach = new WeightedMap<BiomeGenBase>()
+				.add(BiomeGenBase.beach, 0.6)
+				.add(BiomeGenBase.stoneBeach, 0.3)
+				.add(BiomeGenBase.coldBeach, 0.1);
+
+		WeightedMap<BiomeGenBase> wet = new WeightedMap<BiomeGenBase>()
+				.add(BiomeGenBase.swampland, 0.4)
+				.add(BiomeGenBase.jungle, 0.3)
+				.add(BiomeGenBase.jungleHills, 0.2)
+				.add(BiomeGenBase.jungleEdge, 0.1);
+
+		WeightedMap<BiomeGenBase> mushroom = new WeightedMap<BiomeGenBase>()
+				.add(BiomeGenBase.mushroomIsland, 0.8)
+				.add(BiomeGenBase.mushroomIslandShore, 0.2);
+
+		biomeTypes = new WeightedMap<WeightedMap<BiomeGenBase>>()
+				.add(ocean, 0.1)
+				.add(plains, 0.15)
+				.add(sandy, 0.1)
+				.add(mountain, 0.2)
+				.add(forest, 0.1)
+				.add(coniferous, 0.1)
+				.add(wasteland, 0.05)
+				.add(beach, 0.05)
+				.add(wet, 0.1)
+				.add(mushroom, 0.05);
+	}
+
+	private class WeightedMap<T> {
+		private final NavigableMap<Double, T> mWeightedmap = new TreeMap<>();
+		private double total = 0;
+
+		public WeightedMap<T> add(T item, double weight) {
+			mWeightedmap.put(total, item);
+			total += weight;
+			return this;
+		}
+
+		public T getRandom(Random random) {
+			return mWeightedmap.floorEntry(random.nextDouble()).getValue();
+		}
 	}
 }
