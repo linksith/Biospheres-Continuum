@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Random;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFalling;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.BlockPos;
@@ -64,39 +63,6 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 		// load biome data for generating
 		mBiomeGens = mWorld.getWorldChunkManager().loadBlockGeneratorData(mBiomeGens, areaX * 16, areaY * 16, 16, 16);
 
-		// area start position in world coordinates
-		int areaWorldX = areaX * 16;
-		int areaWorldZ = areaY * 16;
-
-		// get average terrain height for this chunk in case the biosphere is new and does not yet have a height
-		boolean inRootRadius = false;
-		if (biosphere.height == 0) {
-			int heightSum = 0;
-			int numHeights = 0;
-			for (int x = 0;x < 16;x++) {
-				for (int z = 0;z < 16;z++) {
-					if (biosphere.inRadius(areaWorldX + x, areaWorldZ + z)) {
-						inRootRadius = true;
-					}
-
-					for (int y = 255; y >= 0; y--) {
-						IBlockState blockState = chunkPrimer.getBlockState(x, y, z);
-						if (blockState != Blocks.air.getDefaultState()) {
-							heightSum += y;
-							numHeights++;
-							break;
-						}
-					}
-				}
-			}
-
-			if (numHeights > 0) {
-				biosphere.height = Math.max(BiosphereInfo.BIOSPHERE_MIN_HEIGHT,
-				                            Math.min(BiosphereInfo.BIOSPHERE_MAX_HEIGHT,
-				                                     heightSum / numHeights));
-			}
-		}
-
 		// generate terrain
 		this.func_180517_a(areaX, areaY, chunkPrimer, mBiomeGens);
 
@@ -105,14 +71,14 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 
 		// todo ravines?
 
-		generateFeatures(areaX, areaY, chunkPrimer, inRootRadius);
+		generateFeatures(areaX, areaY, chunkPrimer);
 
 		// cut out sphere
 		for (int x = 0;x < 16;x++) {
 			for (int z = 0;z < 16;z++) {
 
-				double dx = (areaX * 16 + x) - biosphere.worldCenter.getX();
-				double dz = (areaY * 16 + z) - biosphere.worldCenter.getY();
+				double dx = (areaX * 16 + x) - biosphere.worldCenter.xCoord;
+				double dz = (areaY * 16 + z) - biosphere.worldCenter.zCoord;
 				double distance2dSq = (dx * dx) + (dz * dz);
 
 				// point not in biosphere, ensure all is air
@@ -127,7 +93,7 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 				// cut out sphere itself when within biome's circle radius
 				boolean underGround = false;
 				for (int y = 255; y >= 0; y--) {
-					double dy = y - biosphere.height;
+					double dy = y - biosphere.worldCenter.yCoord;
 
 					double distance3dSq = distance2dSq + (dy * dy);
 
@@ -178,31 +144,23 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 
 	@Override
 	public void func_180514_a(Chunk p_180514_1_, int areaX, int areaY) {
-		generateFeatures(areaX, areaY, null, null);
+		generateFeatures(areaX, areaY, null);
 	}
 
-	private void generateFeatures(int areaX, int areaY, ChunkPrimer chunkPrimer, Boolean overrideInRadius) {
+	private void generateFeatures(int areaX, int areaY, ChunkPrimer chunkPrimer) {
 		BiosphereInfo biosphere = BiosphereChunkManager.get(mWorld).getBiosphereAtArea(areaX,
 		                                                                               areaY);
 
 		boolean inRootRadius = false;
 
 		// no need to recalculate if we already have; ie, did we come from provideChunk()?
-		if (overrideInRadius == null) {
-			for (int x = 0; x < 16; x++) {
-				for (int y = 0; y < 16; y++) {
-
-					double distanceSq = biosphere.worldCenter.distanceSq(areaX * 16 + x, areaY * 16 + y);
-
-					// inside inner radius
-					if (distanceSq <= biosphere.radius) {
-						inRootRadius = true;
-					}
+		for (int x = 0; x < 16; x++) {
+			for (int y = 0; y < 16; y++) {
+				// inside inner radius
+				if (biosphere.inInnerRadius(areaX * 16 + x, areaY * 16 + y)) {
+					inRootRadius = true;
 				}
 			}
-		}
-		else {
-			inRootRadius = overrideInRadius;
 		}
 
 		// todo mineshafts?
