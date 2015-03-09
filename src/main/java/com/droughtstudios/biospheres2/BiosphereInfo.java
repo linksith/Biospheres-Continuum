@@ -192,8 +192,8 @@ public class BiosphereInfo {
 
         boolean nope = true;
         while (nope) {
-            float potentialSpawnX = oreThingRadius * random.nextInt(spawnAreaSizeXZOT);
-            float potentialSpawnZ = oreThingRadius * random.nextInt(spawnAreaSizeXZOT);
+            float potentialSpawnX = oreThingRadius + random.nextInt(spawnAreaSizeXZOT);
+            float potentialSpawnZ = oreThingRadius + random.nextInt(spawnAreaSizeXZOT);
 
             //finding the relative difference between the Ore Thing and the Biosphere
             float radiusAllTogetherNow = oreThingRadius + radius;
@@ -230,7 +230,7 @@ public class BiosphereInfo {
                 double[] allowedHeight = new double[arrayLength];
                 for (int loop = 0; loop < spawnAreaSizeHeightOT; loop++){
                     if(loop < (bufferedSphereHeight - absoluteSphereHeight)){
-                        allowedHeight[loop] = (oreThingRadius + loop);
+                        allowedHeight[loop] = (loop);
                     }
                     //loop will do nothing for the values representing biosphereland
                     if (loop > (bufferedSphereHeight + absoluteSphereHeight)){
@@ -253,8 +253,8 @@ public class BiosphereInfo {
                 oreCoordZ = potentialSpawnZ;
             }
         }
-        oreThingCenter = new Vec3((float)biosphereLocation.x * BIOSPHERE_CHUNK_SIZE * 16f + oreCoordX,
+        oreThingCenter = new Vec3((float)biosphereLocation.x * BIOSPHERE_CHUNK_SIZE * 16.0 + oreCoordX,
                 oreCoordY,
-                (float)biosphereLocation.y * BIOSPHERE_CHUNK_SIZE * 16f + oreCoordZ);
+                (float)biosphereLocation.y * BIOSPHERE_CHUNK_SIZE * 16.0 + oreCoordZ);
     }
 }

@@ -57,6 +57,7 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 
 		BiosphereInfo biosphere = BiosphereChunkManager.get(mWorld).getBiosphereAtArea(areaX, areaY);
 		double biomeRadiusSq = biosphere.radius * biosphere.radius;
+        double OTRadiusSq = biosphere.oreThingRadius * biosphere.oreThingRadius;
 
 		// load default blocks
 		this.func_180518_a(areaX, areaY, chunkPrimer);
@@ -82,9 +83,13 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 				double dz = (areaY * 16 + z) - biosphere.worldCenter.zCoord;
 				double distance2dSq = (dx * dx) + (dz * dz);
 
+                double dotx = (areaX * 16 + x) - biosphere.oreThingCenter.xCoord;
+                double dotz = (areaY * 16 + z) - biosphere.oreThingCenter.zCoord;
+                double distanceot2dSq = (dotx * dotx) + (dotz * dotz);
+
 				// point not in biosphere, ensure all is air
 				// terrain generation above may have added additional terrain outside of circle
-				if (distance2dSq > biomeRadiusSq) {
+				if (distance2dSq > biomeRadiusSq && distanceot2dSq > OTRadiusSq) {
 					for (int y = 0;y < 256;y++) {
 						chunkPrimer.setBlockState(x, y, z, Blocks.air.getDefaultState());
 					}
@@ -95,8 +100,10 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 				boolean underGround = false;
 				for (int y = 255; y >= 0; y--) {
 					double dy = y - biosphere.worldCenter.yCoord;
+                    double doty = y - biosphere.oreThingCenter.yCoord;
 
 					double distance3dSq = distance2dSq + (dy * dy);
+                    double distanceot3dSq = distanceot2dSq + (doty * doty);
 
 					// get current block state
 					Block block = chunkPrimer.getBlockState(x, y, z).getBlock();
@@ -106,7 +113,7 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 					underGround |= isBlockSolid;
 
 					// cut sphere
-					if (distance3dSq > biomeRadiusSq) {
+					if (distance3dSq > biomeRadiusSq && distanceot3dSq > OTRadiusSq) {
 						chunkPrimer.setBlockState(x, y, z, Blocks.air.getDefaultState());
 					}
 
