@@ -16,7 +16,6 @@ import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.ChunkProviderGenerate;
 import net.minecraft.world.gen.MapGenCaves;
 import net.minecraft.world.gen.structure.MapGenScatteredFeature;
-import net.minecraft.world.gen.structure.MapGenStronghold;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.terraingen.PopulateChunkEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -27,7 +26,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 
 	private final MapGenCaves mCaveGen;
-	private final MapGenStronghold mStrongholdGen;
+//	private final BiosphereMapGenStructures.BiosphereStronghold mStrongholdGen;
 	private final MapGenScatteredFeature mScatteredFeatureGen;
 	private final BiosphereMapGenStructures.BiosphereOceanMonument mOceanMonumentGen;
 	private final BiosphereMapGenStructures.BiosphereVillage mVillageGen;
@@ -42,7 +41,7 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 		super(worldIn, seed, p_i45636_4_, p_i45636_5_);
 		mWorld = worldIn;
 		mCaveGen = new MapGenCaves();
-		mStrongholdGen = new MapGenStronghold();
+//		mStrongholdGen = new BiosphereMapGenStructures.BiosphereStronghold();
 		mScatteredFeatureGen = new MapGenScatteredFeature();
 		mOceanMonumentGen = new BiosphereMapGenStructures.BiosphereOceanMonument();
 		mVillageGen = new BiosphereMapGenStructures.BiosphereVillage();
@@ -167,11 +166,12 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 
 		if (inRootRadius) {
 
+			// todo add stronghold support
+//			mStrongholdGen.func_175792_a(this, mWorld, areaX, areaX, chunkPrimer);
+
 			// todo mineshafts?
 
 			mVillageGen.func_175792_a(this, mWorld, areaX, areaY, chunkPrimer);
-
-			// todo stronghold
 
 			// todo scattered features
 
@@ -194,11 +194,21 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 		return super.func_177458_a(p_177458_1_, p_177458_2_);
 	}
 
+	// Stronghold generation ===========================================================================================
+
+//	@Override
+//	public BlockPos func_180513_a(World worldIn, String p_180513_2_, BlockPos p_180513_3_) {
+//		return "Stronghold".equals(p_180513_2_) && mStrongholdGen != null ? mStrongholdGen.func_180706_b(worldIn, p_180513_3_) : null;
+//	}
+
 	// Populate chunk with structure gen ===============================================================================
 
 	@SubscribeEvent
 	public void onPopulateChunk(PopulateChunkEvent.Pre event) {
-		mOceanMonumentGen.func_175794_a(event.world, event.rand, new ChunkCoordIntPair(event.chunkX, event.chunkZ));
-		mVillageGen.func_175794_a(mWorld, mRandom, new ChunkCoordIntPair(event.chunkX, event.chunkZ));
+		ChunkCoordIntPair coord = new ChunkCoordIntPair(event.chunkX, event.chunkZ);
+
+		mOceanMonumentGen.func_175794_a(event.world, event.rand, coord);
+		mVillageGen.func_175794_a(mWorld, mRandom, coord);
+//		mStrongholdGen.func_175794_a(mWorld, mRandom, coord);
 	}
 }

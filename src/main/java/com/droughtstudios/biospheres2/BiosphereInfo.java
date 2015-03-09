@@ -6,6 +6,7 @@ import java.util.Random;
 import java.util.TreeMap;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.biome.BiomeGenBase;
+import net.minecraft.world.gen.structure.MapGenStructure;
 
 /**
  * Created by Trevor on 2/11/2015.
@@ -30,6 +31,7 @@ public class BiosphereInfo {
 	public BiomeGenBase biome;
 
 	public Point featurePosition = null;
+	public Class<? extends MapGenStructure> featureType = null;
 
 	public BiosphereInfo(Point biosphereLocation, Random random) {
 		// set biome ===================================================================================================
