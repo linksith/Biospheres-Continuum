@@ -7,6 +7,7 @@ import java.util.TreeMap;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.gen.structure.MapGenStructure;
+import net.minecraftforge.fml.common.FMLLog;
 
 /**
  * Created by Trevor on 2/11/2015.
@@ -61,6 +62,12 @@ public class BiosphereInfo {
         // make our little ore buddy ===================================================================================
 
         doinOTMaths(biosphereLocation, random, biomeHeight);
+        FMLLog.info("======================================================");
+        FMLLog.info("orething center: " + oreThingCenter);
+        FMLLog.info("biosphere center: " + worldCenter);
+        String omg = "ok ok ok ";
+        if(inRadius((int)oreThingCenter.xCoord,(int)oreThingCenter.yCoord,(int)oreThingCenter.zCoord)){omg = "OMG";}
+        FMLLog.info(omg);
 	}
 
 
@@ -189,6 +196,7 @@ public class BiosphereInfo {
         double oreCoordX = 0;
         double oreCoordY = 0;
         double oreCoordZ = 0;
+        int bufferedSphereRadius = radius + 2;
 
         boolean nope = true;
         while (nope) {
@@ -196,18 +204,18 @@ public class BiosphereInfo {
             float potentialSpawnZ = oreThingRadius + random.nextInt(spawnAreaSizeXZOT);
 
             //finding the relative difference between the Ore Thing and the Biosphere
-            float radiusAllTogetherNow = oreThingRadius + radius;
-            double hypotenuseGoose = (Math.abs(worldCenter.xCoord-potentialSpawnX) * Math.abs(worldCenter.xCoord-potentialSpawnX))
+            float radiusAllTogetherNow = oreThingRadius + bufferedSphereRadius;
+            double OTDistanceXZSq = (Math.abs(worldCenter.xCoord-potentialSpawnX) * Math.abs(worldCenter.xCoord-potentialSpawnX))
                     +(Math.abs(worldCenter.zCoord-potentialSpawnZ) * Math.abs(worldCenter.zCoord-potentialSpawnZ));
-            double relativeHeightenuse = (radiusAllTogetherNow * radiusAllTogetherNow) - hypotenuseGoose;
+            double sphereAtYSq = (bufferedSphereRadius * bufferedSphereRadius) - OTDistanceXZSq;
 
             //If the XZ difference is less than the two radiuses, we need to see if the height allows for some space to generate
             boolean sqrtNecessity = false;
-            if(hypotenuseGoose <= radiusAllTogetherNow*radiusAllTogetherNow){
+            if(OTDistanceXZSq <= radiusAllTogetherNow*radiusAllTogetherNow){
                 //is there no space above?
-                if(relativeHeightenuse <= (256 - (oreThingRadius + sphereHeight)) * (256 - (oreThingRadius + sphereHeight))){
+                if(sphereAtYSq < (256 - (oreThingRadius + sphereHeight)) * (256 - (oreThingRadius + sphereHeight))){
                     //is there no space below?
-                    if (relativeHeightenuse <= (sphereHeight - oreThingRadius) * (sphereHeight - oreThingRadius)){
+                    if (sphereAtYSq <= (sphereHeight - oreThingRadius) * (sphereHeight - oreThingRadius)){
                         //YOU HAVE NOTHING, NOTHING AT ALL TRY AGAIN
                     } else {sqrtNecessity = true;}
                 } else {sqrtNecessity = true;}
@@ -215,46 +223,52 @@ public class BiosphereInfo {
                 //Everything is fine, no more calculating, move on
                 nope = false;
             }
-
+/**
+ * orething center: (-384.0, 112.0, 318.0)
+ [01:19:55] [Server thread/INFO] [FML]: biosphere center: (-348.0, 112.39999961853027, 386.0)
+ [01:19:55] [Server thread/INFO] [FML]: OMG
+ */
             //If we have space but COULD intersect the biosphere, we need to figure a safe height to be
             if (sqrtNecessity){
                 //Absolute value height from sphere height in which the biosphere is currently being a sphere at this x,z
                 // + oreThing buffer
-                double absoluteSphereHeight = Math.sqrt((double) ((radius * radius) - hypotenuseGoose)) + oreThingRadius;
-
-                //Altered sphereHeight with the oreThing's radius buffer as 0
-                double bufferedSphereHeight = sphereHeight - oreThingRadius;
+                double disallowedY = Math.sqrt(sphereAtYSq) + oreThingRadius;
 
                 //Make an array of allowed height spots
-                int arrayLength = (int) (spawnAreaSizeHeightOT - (absoluteSphereHeight * 2));
+                int arrayLength = (int) (spawnAreaSizeHeightOT - (disallowedY * 2));
                 double[] allowedHeight = new double[arrayLength];
-                for (int loop = 0; loop < spawnAreaSizeHeightOT; loop++){
-                    if(loop < (bufferedSphereHeight - absoluteSphereHeight)){
-                        allowedHeight[loop] = (loop);
+                int index = 0;
+                for (int potentialHeight = oreThingRadius; index < allowedHeight.length; potentialHeight++){
+                    if(potentialHeight < (sphereHeight - disallowedY)){
+                        allowedHeight[index] = potentialHeight;
+                        index++;
                     }
                     //loop will do nothing for the values representing biosphereland
-                    if (loop > (bufferedSphereHeight + absoluteSphereHeight)){
-                        allowedHeight[loop - ((int)absoluteSphereHeight * 2)] = (bufferedSphereHeight + absoluteSphereHeight + loop);
+                    if (potentialHeight > (sphereHeight + disallowedY)){
+                        allowedHeight[index] = potentialHeight;
+                        index++;
                     }
                 }
 
                 //Find a random height within this array
-                oreCoordY = (int) allowedHeight[random.nextInt(arrayLength)];
+                oreCoordY = (int) allowedHeight[random.nextInt(allowedHeight.length)];
 
                 //set the rest
                 oreCoordX = potentialSpawnX;
                 oreCoordZ = potentialSpawnZ;
+                //nope = !inRadius((int)oreCoordX,(int)oreCoordY,(int)oreCoordZ);
             //Set a simple random height if we're not intersecting anything and are about to move on emotionally
             } else if ( !nope ){
-                oreCoordY = random.nextInt(spawnAreaSizeHeightOT);
+                oreCoordY = oreThingRadius + (random.nextInt(spawnAreaSizeHeightOT));
 
                 //set the rest
                 oreCoordX = potentialSpawnX;
                 oreCoordZ = potentialSpawnZ;
+                //nope = !inRadius((int)oreCoordX,(int)oreCoordY,(int)oreCoordZ);
             }
         }
-        oreThingCenter = new Vec3((float)biosphereLocation.x * BIOSPHERE_CHUNK_SIZE * 16.0 + oreCoordX,
-                oreCoordY,
-                (float)biosphereLocation.y * BIOSPHERE_CHUNK_SIZE * 16.0 + oreCoordZ);
+        oreThingCenter = new Vec3((int)(biosphereLocation.x * BIOSPHERE_CHUNK_SIZE * 16 + oreCoordX),
+                (int)oreCoordY,
+                (int)(biosphereLocation.y * BIOSPHERE_CHUNK_SIZE * 16 + oreCoordZ));
     }
 }

@@ -112,6 +112,12 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 					// solid blocks found in this column, so we are now 'underground'
 					underGround |= isBlockSolid;
 
+                    //ore buddy
+                    boolean inOreBuddy = false;
+                    if ( distanceot3dSq <= OTRadiusSq) {
+                        inOreBuddy = true;
+                    }
+
 					// cut sphere
 					if (distance3dSq > biomeRadiusSq && distanceot3dSq > OTRadiusSq) {
 						chunkPrimer.setBlockState(x, y, z, Blocks.air.getDefaultState());
@@ -123,12 +129,12 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 
 						// close sphere below ground with stone
 						// todo consider the end and the nether
-						if (underGround) {
+						if (underGround || inOreBuddy) {
 							chunkPrimer.setBlockState(x, y, z, Blocks.stone.getDefaultState());
 						}
 
 						// close sphere above ground with glass
-						else {
+						else if (!inOreBuddy){
 							chunkPrimer.setBlockState(x, y, z, BlockDome.blockDome.getDefaultState());
 						}
 					}
@@ -195,7 +201,7 @@ public class BiosphereChunkGenerator extends ChunkProviderGenerate {
 
 	@Override
 	public List func_177458_a(EnumCreatureType p_177458_1_, BlockPos p_177458_2_) {
-		if (p_177458_1_ == EnumCreatureType.MONSTER && mOceanMonumentGen.func_175796_a(mWorld, p_177458_2_)) {
+        if (p_177458_1_ == EnumCreatureType.MONSTER && mOceanMonumentGen.func_175796_a(mWorld, p_177458_2_)) {
 			return mOceanMonumentGen.func_175799_b();
 		}
 		return super.func_177458_a(p_177458_1_, p_177458_2_);
